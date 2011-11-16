@@ -34,7 +34,7 @@ import utils.RequestAnimationFrame;
 
 class Game 
 {
-	public static inline var TILE_SIZE : Int = 16;
+	public static inline var TILE_SIZE : Int = 8;
 	
 	private var width : Int;
 	private var height : Int;
@@ -78,9 +78,9 @@ class Game
 		
 		// Setup the initial geom
 		geometry = new Geometry();
-		for (yi in 0...100) 
+		for (yi in 0...200) 
 		{
-			for (xi in 0...100) 
+			for (xi in 0...200) 
 			{				
 				var vector = new Vector3( xi*(TILE_SIZE+1), yi*(TILE_SIZE+1), 0 );
 				geometry.vertices.push( new Vertex( vector ) );
@@ -137,7 +137,7 @@ class Game
 
 			amplitude: { type: "f", value: 1.0 },
 			color:     { type: "c", value: new Color( 0xffffff ) },
-			texture:   { type: "t", value: 0, texture: ImageUtils.loadTexture( "assets/terrain01.png" ) },
+			texture:   { type: "t", value: 0, texture: ImageUtils.loadTexture( "assets/blank.png" ) },
 
 		};
 
@@ -186,7 +186,7 @@ class Game
 		// For each tile
 		for (i in 0...sizes.length) 
 		{
-			sizes[i] = 10 + Math.random() * 6;
+			sizes[i] = 6 + Math.random() * 2;
 			colors[i].r = Math.random();
 			colors[i].g = Math.random();
 			colors[i].b = Math.random();
