@@ -1,0 +1,5 @@
+-cp src
+-cp three
+-js bin/Hxaria.js
+-main Main.hx
+-debug

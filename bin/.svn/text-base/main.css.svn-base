@@ -1,0 +1,23 @@
+body 
+{
+	color: #1E1E1E;
+	font: normal normal normal 0.75em/1.73em Verdana, Arial, Geneva, Helvetica, sans-serif;
+	overflow-x: hidden;
+	margin: 0px;
+	overflow: hidden;
+	height:100%; 
+}
+
+fullscreen
+{ 
+	margin:0; 
+	padding:0; 
+	height:100%; 
+}
+
+statsWindow
+{
+	position: albolute;
+	left: 0px;
+	right: 0px;
+}
