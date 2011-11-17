@@ -149,7 +149,7 @@ class Game
 			vertexShader:Shaders.getVS(), 
 			fragmentShader: Shaders.getFS(), 
 			depthTest:false, 
-			transparent:true 
+			transparent:true
 		} );
 	}	
 	
@@ -186,7 +186,7 @@ class Game
 		// For each tile
 		for (i in 0...sizes.length) 
 		{
-			sizes[i] = 6 + Math.random() * 2;
+			sizes[i] = 4+ Math.random() * 4;
 			colors[i].r = Math.random();
 			colors[i].g = Math.random();
 			colors[i].b = Math.random();
