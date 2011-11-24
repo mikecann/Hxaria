@@ -11,6 +11,8 @@ import utils.ConsoleTracing;
 
 class Main 
 {
+	private var _game : Game;
+	private var _guiMan : GUIManager;
 	
 	public function new()
 	{
@@ -19,7 +21,8 @@ class Main
 	
 	private function onWindowLoad(e) : Void
 	{
-		new Game();
+		_game = new Game();
+		_guiMan = new GUIManager(_game);		
 	}
 	
 	static function main() 

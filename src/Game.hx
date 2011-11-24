@@ -22,6 +22,7 @@ import three.PerspectiveCamera;
 import three.Scene;
 import three.Scene;
 import three.Texture;
+import three.Vector2;
 import three.Vector3;
 import three.Vertex;
 import three.WebGLRenderer;
@@ -33,19 +34,19 @@ import utils.RequestAnimationFrame;
  */
 
 class Game 
-{
-	public static inline var TILE_SIZE : Int = 8;
-	
+{	
 	private var width : Int;
 	private var height : Int;
 	private var renderer : WebGLRenderer;
 	private var container : Dynamic;
 	private var camera:Camera;
-	private var scene:Scene;
-	private var geometry:Geometry;
+	
+	public var scene:Scene;	
+	public var tilemap : Tilemap;
+	public var tilemapRenderer : TilemapRenderer;
+	
 	private var mouseX : Float;
-	private var mouseY : Float;
-	private var material : MeshShaderMaterial;
+	private var mouseY : Float;	
 	private var isMouseDown : Bool;
 	private var lastMouseX : Int;
 	private var lastMouseY : Int;
@@ -61,8 +62,6 @@ class Game
 		render();
 	}
 	
-	
-	
 	private function init() : Void
 	{				
 		// Create the container and listen for resizes
@@ -71,96 +70,45 @@ class Game
 		
 		// Camera
 		camera = new Camera();
-		camera.projectionMatrix = Matrix4.makeOrtho( Lib.window.innerWidth / - 2, Lib.window.innerWidth / 2, Lib.window.innerHeight / 2, Lib.window.innerHeight / - 2, -10, 10 );
+		camera.projectionMatrix = Matrix4.makeOrtho(width / - 2, width / 2, height / 2, height / - 2, -10, 10 );
+		camera.translateX(width>>1);
+		camera.translateY(-height>>1);
 		
 		// Create scene
 		scene = new Scene();		
 		
-		// Setup the initial geom
-		geometry = new Geometry();
-		for (yi in 0...200) 
-		{
-			for (xi in 0...200) 
-			{				
-				var vector = new Vector3( xi*(TILE_SIZE+1), yi*(TILE_SIZE+1), 0 );
-				geometry.vertices.push( new Vertex( vector ) );
-			}
-		}
-
-		// Create the material
-		material = getMaterial();		
-		
-		// The tile particle system
-		var particles = new ParticleSystem( geometry, cast [material] );
-		particles.sortParticles = false;		
-		scene.addChild(particles);
-		
-		// Init the custom tile properites
-		var vertices = geometry.vertices;
-		for (i in 0...vertices.length)
-		{
-			material.attributes.size.value[i] = TILE_SIZE;
-			
-			var c = new Color( );
-			c.r = Math.random();
-			c.g = Math.random();
-			c.b = Math.random();
-			material.attributes.customColor.value[i] = c;
-		}
-				
 		// Create renderer
 		renderer = new WebGLRenderer( { clearAlpha: 1 } );
 		renderer.setSize( width, height );
 		renderer.sortObjects = false;
 		renderer.setClearColorHex(0xabcdef, 1);
-		container.appendChild(renderer.domElement);	
+		container.appendChild(renderer.domElement);
+		
+		// Create the tilemap and its renderer
+		tilemap = new Tilemap(this);
+		tilemapRenderer = new TilemapRenderer(this);
 		
 		// Listen for resizing
 		new JQuery(cast Lib.window).resize(onResize);		
 		new JQuery(Lib.document).mousemove(onDocumentMouseMove);			
 		new JQuery(Lib.document).mousedown(function(e) { isMouseDown = true; } );			
 		new JQuery(Lib.document).mouseup(function(e) { isMouseDown = false; } );			
-	}	
-	
-	private function getMaterial() : MeshShaderMaterial
-	{
-		// Some custom shader attribs
-		var attributes = 
-		{
-			size: {	type: 'f', value: [] },
-			customColor: { type: 'c', value: [] }
-		};
-
-		// And uniforms
-		var uniforms = 
-		{
-
-			amplitude: { type: "f", value: 1.0 },
-			color:     { type: "c", value: new Color( 0xffffff ) },
-			texture:   { type: "t", value: 0, texture: ImageUtils.loadTexture( "assets/blank.png" ) },
-
-		};
-
-		// Our material
-		return new MeshShaderMaterial( 
-		{ 
-			uniforms:uniforms, 
-			attributes:attributes, 
-			vertexShader:Shaders.getVS(), 
-			fragmentShader: Shaders.getFS(), 
-			depthTest:false, 
-			transparent:true
-		} );
-	}	
+	}		
 	
 	private function onResize(e):Void 
 	{
+		if (!container) return;
+		
 		width = Lib.window.innerWidth;
-		height = Lib.window.innerHeight;
-		camera.aspect = width / height;
-		camera.updateProjectionMatrix();
+		height = Lib.window.innerHeight;		
+		
 		renderer.setSize( width, height );
-		trace("canvas resize: "+width + ", " + height);
+		tilemapRenderer.resize(width, height);
+		
+		camera = new Camera();
+		camera.projectionMatrix = Matrix4.makeOrtho(width / - 2, width / 2, height / 2, height / - 2, -10, 10 );
+		camera.translateX(width>>1);
+		camera.translateY(-height>>1);
 	}
 	
 	private function onDocumentMouseMove(e:JqEvent) 
@@ -168,8 +116,10 @@ class Game
 		// Pan around with the mouse
 		if (isMouseDown)
 		{
-			camera.translateX(lastMouseX-e.pageX);
-			camera.translateY(e.pageY-lastMouseY);			
+			//camera.translateX(lastMouseX-e.pageX);
+			//camera.translateY(e.pageY-lastMouseY);		
+			tilemap.scrollX += lastMouseX - e.pageX;
+			tilemap.scrollY += lastMouseY - e.pageY;
 		}
 		lastMouseX = e.pageX; 
 		lastMouseY = e.pageY;
@@ -177,24 +127,11 @@ class Game
 	
 	private function render():Void 
 	{		
+		// Get next frame
 		RequestAnimationFrame.request (render);
 		
-		// Shortcut
-		var sizes : Array<Float> = material.attributes.size.value;
-		var colors : Array<Color> = material.attributes.customColor.value;		
-		
-		// For each tile
-		for (i in 0...sizes.length) 
-		{
-			sizes[i] = 4+ Math.random() * 4;
-			colors[i].r = Math.random();
-			colors[i].g = Math.random();
-			colors[i].b = Math.random();
-		}
-
-		// Tell three to update them
-		material.attributes.size.needsUpdate = true;
-		material.attributes.customColor.needsUpdate = true;
+		// Update the bits and bobs
+		tilemapRenderer.update();
 		
 		// Finally render
 		renderer.render(scene, camera, null);
