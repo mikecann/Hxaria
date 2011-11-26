@@ -2,7 +2,7 @@ package dat;
 
 /**
  * ...
- * @author 
+ * @author Mike Cann
  */
 
 extern class GUI 
